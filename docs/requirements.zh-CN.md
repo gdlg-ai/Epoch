@@ -16,18 +16,20 @@
 - Ollama（可选 LLM/VLM）：使用最新版本；macOS 走 Metal，Linux 走 CUDA。
 
 推荐默认（PoC）
-- 向量模型：`sentence-transformers/all-MiniLM-L6-v2`（英文）或 `BAAI/bge-small-zh-v1.5`（中文）或 `BAAI/bge-m3`（多语）。
+- 向量模型（默认）：`BAAI/bge-small-zh-v1.5`（中文表现强，英文可用，CPU 友好）。可选：`BAAI/bge-small-en-v1.5`（偏英文）或 `BAAI/bge-m3`（多语 SOTA，较重）。
 - ASR（阶段一后加入）：`faster-whisper` small/base；CPU 可用，GPU 适配更接近实时。
 - VAD：`silero-vad`（轻量）。
-- 向量存储：当前 JSONL；后续在存储接口下切换到 Chroma/Weaviate。
+- 向量存储：当前 JSONL；优先实现 ChromaDB 的适配器（嵌入式、Apache‑2.0），后续再考虑 Weaviate。
 - LLM（经 Ollama，可选）：`phi3:mini`、`mistral:7b-instruct`、`qwen2:7b`。VLM：`llava:7b` 或后续 `qwen2-vl`。
+- 检索：默认启用 MMR 重排（提升多样性）；规划混合检索（BM25 + 向量）。
 
-环境变量（建议；部分为前瞻）
-- `EMBED_MODEL`（默认：`sentence-transformers/all-MiniLM-L6-v2`）
+- 环境变量（建议；部分为前瞻）
+- `EMBED_MODEL`（默认：`BAAI/bge-small-zh-v1.5`）
 - `ASR_MODEL`（默认：`faster-whisper-small`）
 - `VECTOR_STORE`（默认：`jsonl`；后续：`chroma|weaviate`）
 - `DEVICE`（默认：`cpu`；有 GPU 时为 `cuda`）
 - `TOP_K`（默认：`5`）
+- `USE_MMR`（默认：`true`）、`MMR_CANDIDATES`（默认：`20`）、`MMR_LAMBDA`（默认：`0.5`）
 
 配置分级
 - 最低 PoC（仅 CPU）：2 核、4 GB 内存、5 GB 磁盘。适合文本录入/检索与小体量记忆。
@@ -55,4 +57,3 @@ Docker 资源建议
 - 提供常用 Embedding/ASR 的预构建镜像。
 - 加入向量库适配器（Chroma/Weaviate）与迁移脚本。
 - 发布延迟与检索准确度的评测脚本。
-

@@ -16,18 +16,19 @@ Software Prerequisites
 - Ollama (optional LLM/VLM): latest release; Metal on macOS, CUDA on Linux.
 
 Recommended Defaults (PoC)
-- Embeddings: `sentence-transformers/all-MiniLM-L6-v2` (English) OR `BAAI/bge-small-zh-v1.5` (Chinese) OR `BAAI/bge-m3` (multilingual).
+- Embeddings (default): `BAAI/bge-small-zh-v1.5` (strong zh, good EN; CPU‑friendly). Optional: `BAAI/bge-small-en-v1.5` for EN‑heavy, or `BAAI/bge-m3` (multilingual SOTA; heavier).
 - ASR (optional in Phase 1+): `faster-whisper` small/base; CPU okay, GPU preferred for real-time.
 - VAD: `silero-vad` (lightweight).
-- Vector store: JSONL (current PoC); plan to switch to Chroma or Weaviate behind a storage interface.
+- Vector store: JSONL (current PoC); first adapter target: ChromaDB (embedded, Apache‑2.0) behind a storage interface; Weaviate considered later.
 - LLM (via Ollama, optional): `phi3:mini`, `mistral:7b-instruct`, `qwen2:7b`. VLM: `llava:7b` or `qwen2-vl` later.
+- Retrieval: enable MMR re‑ranking by default for diverse top‑K; plan hybrid BM25 + dense.
 
-Env Vars (suggested; some may be future-facing)
-- `EMBED_MODEL` (default: `sentence-transformers/all-MiniLM-L6-v2`)
+- `EMBED_MODEL` (default: `BAAI/bge-small-zh-v1.5`)
 - `ASR_MODEL` (default: `faster-whisper-small`)
 - `VECTOR_STORE` (default: `jsonl`; future: `chroma|weaviate`)
 - `DEVICE` (default: `cpu`; future: `cuda` when available)
 - `TOP_K` (default: `5`)
+- `USE_MMR` (default: `true`), `MMR_CANDIDATES` (default: `20`), `MMR_LAMBDA` (default: `0.5`)
 
 Sizing Tiers
 - Minimum PoC (CPU-only): 2 cores, 4 GB RAM, 5 GB free disk. Suitable for text ingest/query and small memories.
@@ -55,4 +56,3 @@ Next Iterations
 - Provide prebuilt model images for common embeddings/ASR.
 - Add vector DB adapters (Chroma/Weaviate) and migration script.
 - Publish evaluation scripts for latency and retrieval accuracy.
-

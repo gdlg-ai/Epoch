@@ -33,20 +33,17 @@ Priority & Timebox: P0 (this week), 6–10 hours unless noted.
 
 P0 Topics (High Priority)
 
-1) Embeddings (EN/zh/multilingual) Selection — Ready Prompt
-Research best local embeddings for a privacy-first, CPU-viable personal AI (Project Epoch). Compare MiniLM (`sentence-transformers/all-MiniLM-L6-v2`), `BAAI/bge-small-zh-v1.5`, and `BAAI/bge-m3` on quality (MTEB/BEIR including Chinese), CPU speed, memory footprint, and licenses. Output format as specified. Implementation should update `.env.example` (`EMBED_MODEL`), `docs/architecture*.md` guidance, and `docs/requirements*.md` defaults; include a fallback matrix by hardware tier.
+Resolved: Embeddings selection → default `BAAI/bge-small-zh-v1.5`; optional `BAAI/bge-m3` for high-end multilingual.
 
-2) Vector DB for Local-First — Ready Prompt
-For a single-user local app, compare Chroma, Weaviate, and FAISS for persistence, offline ops, memory footprint, simplicity, and licensing. Recommend the first adapter to implement. Provide a storage interface design and a migration plan from JSONL. Include Compose/profile guidance. Update `docs/architecture*.md` and create an interface outline for `services/api` (no full code needed).
+2) Vector DB (Chroma) Adapter Details — Ready Prompt
+Deep dive on ChromaDB for single-user local apps: persistence backend options (SQLite/DuckDB), index choices (HNSW/FAISS), best defaults for small corpora, and backup/export strategy. Output: concrete adapter design notes; migration steps from JSONL (id mapping, schema); env vars; and reliability tips. Update targets: `docs/architecture*.md`, `.env.example`, and a stub storage interface module path proposal.
 
-3) Retrieval Strategy Upgrade — Ready Prompt
-Compare dense-only vs hybrid (BM25 + dense) vs MMR and cross-encoder rerankers (e.g., `bge-reranker-base/small`) with CPU viability. Recommend a staged retrieval pipeline for PoC and when-to-enable rules. Provide evaluation targets and thresholds. Update `docs/architecture*.md` accordingly.
+3) Hybrid Retrieval for Chinese (BM25 + Dense) — Ready Prompt
+Select a CPU-friendly BM25 implementation for zh/EN (Whoosh vs Pyserini/Lucene), tokenizer/analyzer choices for Chinese (jieba/pkuseg/character-level), and fusion strategy with dense retrieval. Output: library choice, analyzer config, fusion logic, and thresholds. Update targets: `docs/architecture*.md` and requirements.
 
-4) Evaluation Baselines — Ready Prompt
-Design a lightweight, reproducible local evaluation harness for latency (P50/P95) and retrieval quality (Recall@K/Hit@K) using small subsets from MTEB/BEIR and at least one Chinese corpus. Propose `scripts/eval_latency.py` and `scripts/eval_retrieval.py` outlines, datasets, metrics, and reporting. Update `docs/requirements*.md` with targets.
+Resolved: Evaluation baseline scripts added (`scripts/eval_latency.py`, `scripts/eval_retrieval.py`). Next: propose dataset choices and target thresholds.
 
-5) ASR Local Pipeline — Ready Prompt
-Compare `faster-whisper` (small/base) and `whisper.cpp` for EN/zh accuracy, punctuation, diarization needs, and VAD (`silero-vad`). Provide CPU vs GPU trade-offs and default recommendations by hardware tier. Update `docs/requirements*.md` (defaults and sizing) and roadmap notes in `docs/architecture*.md`.
+Resolved: Default to faster-whisper small with VAD; document base/quant options. Future: diarization integration plan.
 
 6) VLM for Image→Memory — Ready Prompt
 Evaluate LLaVA 1.6 and Qwen2-VL (7B class) for caption/summary generation in EN/zh, VRAM needs, CPU feasibility, and licenses. Recommend a default and a fallback with constraints. Provide an API hook design for later integration. Update docs only.
@@ -71,11 +68,10 @@ Propose realistic P0 targets per hardware tier (latency, retrieval quality, foot
 
 P1 Topics (Backlog)
 
-13) Hybrid Search for Chinese — Ready Prompt
-Identify best BM25/tokenization for zh (jieba, pkuseg, character-level) and dense fusion strategy. Provide config notes and trade-offs.
+Resolved / Elevated to P0 (see #3).
 
 14) Rerankers on CPU — Ready Prompt
-Evaluate small cross-encoders (e.g., `bge-reranker-base/small`) for CPU throughput and quality. Recommend thresholds for when to enable rerank.
+Evaluate small cross-encoders (e.g., `bge-reranker-base/small`) for CPU throughput and quality. Recommend thresholds for when to enable rerank; propose `USE_RERANKER` env and defaults.
 
 15) Streaming ASR & Diarization — Ready Prompt
 Design a low-latency pipeline with VAD + partial hypotheses and simple diarization. Provide a staging plan and constraints.
@@ -109,4 +105,3 @@ Integration Map (Where to Apply Results)
 - Env/Compose: `.env.example`, `compose.yaml`
 - API/Interfaces: `services/api/main.py`, (future) storage adapter module
 - Evaluation scripts (to add): `scripts/eval_latency.py`, `scripts/eval_retrieval.py`
-

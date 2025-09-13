@@ -10,7 +10,7 @@
 
 数据流
 - /ingest：文本（+标签）→ 追加写入 JSONL → 生成向量 → 内存索引
-- /query：问题 → 生成向量 → 余弦相似 → Top-K 结果
+- /query：问题 → 生成向量 → 余弦相似 → 候选集 → 可选 MMR 重排 → Top-K 结果
 
 服务
 - api：FastAPI，提供 `/health`、`/ingest`、`/query`
@@ -18,7 +18,7 @@
 - ollama：预留，当前默认关闭（按需在 compose 开启）
 
 下一步
-- 将 JSONL 替换为向量数据库（ChromaDB/Weaviate）
+- 将 JSONL 替换为向量数据库（优先 ChromaDB 适配器；后续再考虑 Weaviate）
 - 引入 ASR（Whisper/faster-whisper）与 VAD
 - 整合 VLM（如 LLaVA/Qwen-VL）实现图像→文本入库
 - 引入本地 LLM + RAG 的推理层
@@ -55,6 +55,11 @@ API 契约（当前）
 - 本地 RAG 端到端 P50 < 2s（早期可放宽）。
 - 检索质量：Top‑K 命中率/主观相关性 ≥ 80% 目标。
 - 资源占用：在消费级硬件无独显也可运行。
+
+检索策略
+- 基线：稠密向量 + 余弦相似。
+- 多样性：对候选结果启用 MMR 重排。
+- 混合（规划）：加入 BM25 词法检索（Whoosh/Pyserini）并与向量结果融合。
 
 迁移计划（向量数据库）
 - 步骤一：引入存储接口；保留 JSONL 适配器。

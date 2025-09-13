@@ -13,8 +13,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 APP_ENV = os.getenv("APP_ENV", "dev")
 MEMORY_PATH = Path(os.getenv("MEMORY_PATH", "/app/data/memory.jsonl"))
-EMBED_MODEL = os.getenv("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-zh-v1.5")
 DEFAULT_TOP_K = int(os.getenv("TOP_K", "5"))
+USE_MMR = os.getenv("USE_MMR", "true").lower() == "true"
+MMR_CANDIDATES = int(os.getenv("MMR_CANDIDATES", "20"))
+MMR_LAMBDA = float(os.getenv("MMR_LAMBDA", "0.5"))
 
 
 class IngestItem(BaseModel):
@@ -91,9 +94,34 @@ class MemoryStore:
             return []
         q = self._lazy_model().encode([query], convert_to_numpy=True, normalize_embeddings=True)
         sims = cosine_similarity(q, self._emb)[0]
-        idx = np.argsort(-sims)[:top_k]
+        # Initial candidate pool
+        if USE_MMR:
+            k_cand = min(MMR_CANDIDATES, len(sims))
+            cand_idx = np.argsort(-sims)[:k_cand]
+            selected = []
+            # Precompute candidate-candidate similarities for MMR
+            cand_vecs = self._emb[cand_idx]
+            # Normalize should be already true; cosine sim equals dot product
+            cand_sims = cosine_similarity(cand_vecs, cand_vecs)
+            # Query-candidate sims
+            q_sims = sims[cand_idx]
+            while len(selected) < min(top_k, k_cand):
+                if not selected:
+                    # pick the best by relevance
+                    next_i = int(np.argmax(q_sims))
+                else:
+                    # compute MMR score = lambda*rel - (1-lambda)*max_sim_to_selected
+                    max_sim_to_sel = cand_sims[:, selected].max(axis=1)
+                    mmr_scores = MMR_LAMBDA * q_sims - (1 - MMR_LAMBDA) * max_sim_to_sel
+                    # Mask already selected
+                    mmr_scores[selected] = -1e9
+                    next_i = int(np.argmax(mmr_scores))
+                selected.append(next_i)
+            final_idx = cand_idx[selected]
+        else:
+            final_idx = np.argsort(-sims)[:top_k]
         results = []
-        for i in idx:
+        for i in final_idx:
             results.append({
                 "text": self._texts[i],
                 "tags": self._tags[i],

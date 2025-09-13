@@ -32,20 +32,17 @@ OpenAI Deep Research —— 题目包（Project Epoch v0.2）
 
 P0 主题（高优先级）
 
-1）向量模型（英文/中文/多语）选择 —— 即贴即用
-为隐私优先、CPU 可用的个人 AI（Project Epoch）调研最佳本地向量模型。比较 MiniLM（`sentence-transformers/all-MiniLM-L6-v2`）、`BAAI/bge-small-zh-v1.5`、`BAAI/bge-m3` 在质量（含中文 MTEB/BEIR）、CPU 速度、内存占用与许可。按“统一输出格式”产出。实施需更新 `.env.example`（`EMBED_MODEL`）、`docs/architecture*.md` 指南与 `docs/requirements*.md` 默认；按硬件档位给出回退矩阵。
+已解决：向量模型选择 —— 默认采用 `BAAI/bge-small-zh-v1.5`；高阶可选 `BAAI/bge-m3`。
 
-2）本地优先向量库选择 —— 即贴即用
-针对单用户本地应用，比较 Chroma、Weaviate、FAISS 的持久化、离线能力、内存占用、易用性与许可。推荐先实现的适配器。给出存储接口设计与从 JSONL 迁移计划；包含 Compose/profile 指引。更新 `docs/architecture*.md` 并在 `services/api` 提供接口草图（无需完整代码）。
+2）ChromaDB 适配器细化 —— 即贴即用
+围绕单用户本地场景，细化 ChromaDB 的持久化选项（SQLite/DuckDB）、索引选择（HNSW/FAISS）、小数据量默认配置与备份/导出策略。输出：适配器设计要点；从 JSONL 的迁移步骤（id 映射、schema）；环境变量；可靠性建议。更新：`docs/architecture*.md`、`.env.example`，并给出 `services/api` 下的存储接口模块路径建议。
 
-3）检索策略升级 —— 即贴即用
-比较纯向量 vs 混合（BM25 + 向量）vs MMR 与交叉编码重排（如 `bge-reranker-base/small`）的 CPU 可行性。给出 PoC 的分阶段检索管线与启用条件。提供评测目标与阈值。更新 `docs/architecture*.md`。
+3）中文混合检索（BM25 + 向量） —— 即贴即用
+选择适合 zh/EN 的 CPU 友好 BM25 实现（Whoosh vs Pyserini/Lucene），并确定中文分词/分析器（jieba/pkuseg/字粒度），以及与稠密向量的融合策略。输出：库选择、分析器配置、融合逻辑与阈值。更新：`docs/architecture*.md` 与系统要求。
 
-4）评测基线 —— 即贴即用
-设计轻量、可复现的本地评测：延迟（P50/P95）与检索质量（Recall@K/Hit@K），采用 MTEB/BEIR 小子集与至少一个中文语料。提出 `scripts/eval_latency.py` 与 `scripts/eval_retrieval.py` 的脚本框架、数据集、指标与报告方式。更新 `docs/requirements*.md` 的目标值。
+已解决：评测脚本骨架已添加（`scripts/eval_latency.py`、`scripts/eval_retrieval.py`）。下一步：补充数据集选择与目标阈值。
 
-5）本地 ASR 流程 —— 即贴即用
-比较 `faster-whisper`（small/base）与 `whisper.cpp` 在英文/中文准确率、断句、说话人分离需求与 VAD（`silero-vad`）。提供 CPU 与 GPU 的取舍与按硬件档位的默认推荐。更新 `docs/requirements*.md`（默认与容量分级）与 `docs/architecture*.md` 的路线图说明。
+已解决：默认 faster-whisper small + VAD；记录 base/量化与边缘设备回退。后续：分离（diarization）接入方案。
 
 6）图像→记忆的 VLM 选择 —— 即贴即用
 评估 LLaVA 1.6 与 Qwen2-VL（7B 量级）在中英文字幕/摘要的质量、显存需求、CPU 可行性与许可。推荐默认与回退方案及约束。提供后续接入的 API 钩子设计（仅文档）。
@@ -70,11 +67,10 @@ P0 主题（高优先级）
 
 P1 主题（后备清单）
 
-13）中文混合检索细节 —— 即贴即用
-确定中文 BM25/分词（jieba、pkuseg、字粒度）与向量融合策略，提供配置建议与权衡。
+已提升至 P0（见 #3）。
 
 14）CPU 上的重排器 —— 即贴即用
-评估小型交叉编码器（如 `bge-reranker-base/small`）在 CPU 吞吐与质量，给出启用阈值建议。
+评估 `bge-reranker-base/small` 在 CPU 的吞吐与质量，提出启用阈值与 `USE_RERANKER` 环境变量与默认建议。
 
 15）流式 ASR 与分离 —— 即贴即用
 设计低时延管线（VAD + 部分假设）与简易说话人分离，给出分阶段实施与约束。
@@ -108,4 +104,3 @@ P1 主题（后备清单）
 - 环境/编排：`.env.example`、`compose.yaml`
 - API/接口：`services/api/main.py`，以及未来的存储适配器模块
 - 评测脚本（待新增）：`scripts/eval_latency.py`、`scripts/eval_retrieval.py`
-

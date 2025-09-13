@@ -21,6 +21,7 @@ What you can do today
 - Ingest short notes (text) and instantly search by meaning (semantic search).
 - Explore a minimal UI and API that runs entirely on your machine.
 - Inspect how we embed, store, and retrieve memories (transparent by design).
+ - Default embeddings use `BAAI/bge-small-zh-v1.5` for strong zh/EN retrieval; switch via `EMBED_MODEL`.
 
 Roadmap
 - Phase 1 — Chronicler: audio→ASR→embed→vector store→text RAG; daily digest

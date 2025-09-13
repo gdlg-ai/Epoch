@@ -10,7 +10,7 @@ Layers
 
 Data Flow
 - /ingest: text (+tags) → append to JSONL → embed → in-memory index
-- /query: query → embed → cosine similarity → top-k results
+- /query: query → embed → cosine similarity → candidates → optional MMR re-ranking → top-k results
 
 Services
 - api: FastAPI, endpoints `/health`, `/ingest`, `/query`
@@ -18,7 +18,7 @@ Services
 - ollama: prepared but disabled for now (enable in compose as needed)
 
 Next Steps
-- Replace JSONL with a vector DB (e.g., ChromaDB/Weaviate)
+- Replace JSONL with a vector DB (start with ChromaDB adapter; consider Weaviate later)
 - Add ASR pipeline (Whisper/faster-whisper) and VAD
 - Add VLM intake (e.g., LLaVA/Qwen-VL) for images → text memory
 - Introduce a prompt/RAG layer using local LLMs via Ollama
@@ -55,6 +55,11 @@ Metrics & Benchmarks (targets)
 - RAG latency P50 < 2s (end-to-end local; relaxed in early PoC).
 - Retrieval quality: top-k hit-rate / subjective relevance ≥ 80% target.
 - Footprint: runnable on consumer hardware without dedicated GPUs.
+
+Retrieval Strategy
+- Baseline: dense embeddings + cosine.
+- Diversity: enable Maximal Marginal Relevance (MMR) post-filter on candidates.
+- Hybrid (planned): add BM25 lexical index (Whoosh/Pyserini) and merge with dense results.
 
 Migration Plan (vector DB)
 - Step 1: introduce storage interface; keep JSONL adapter.
