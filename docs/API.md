@@ -7,6 +7,17 @@ Endpoints
 - `GET /health`
   - Returns: `{ "status": "ok", "items": number }`
 
+- `GET /model`
+  - Returns: a summary of current model/storage/retrieval/ASR settings, e.g.
+    ```json
+    {
+      "embedding": {"model": "BAAI/bge-small-zh-v1.5", "add_query_prefix": "true"},
+      "retrieval": {"top_k": 5, "use_mmr": true, "enable_bm25": true, "enable_reranker": false},
+      "storage": {"backend": "chroma", "chroma_persist_dir": "/app/data/chroma"},
+      "asr": {"enabled": "true", "size": "small", "device": "auto"}
+    }
+    ```
+
 - `POST /ingest`
   - Body (JSON): `{ text: string, tags?: string[], source?: string, ts?: string }`
   - Returns: `{ ok: boolean, id?: string }`
@@ -26,4 +37,3 @@ Environment Toggles (selection)
 - Retrieval: `TOP_K`, `USE_MMR`, `ENABLE_BM25`, `ENABLE_RERANKER`
 - Embeddings: `EMBED_MODEL`, `EMBED_ADD_QUERY_PREFIX`
 - Storage: `VECTOR_STORE=chroma|jsonl`, `CHROMA_PERSIST_DIR`
-

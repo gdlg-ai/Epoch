@@ -7,6 +7,17 @@ API 参考（v0.2）
 - `GET /health`
   - 返回：`{ "status": "ok", "items": number }`
 
+- `GET /model`
+  - 返回：当前嵌入/检索/存储/ASR 的配置摘要，例如：
+    ```json
+    {
+      "embedding": {"model": "BAAI/bge-small-zh-v1.5", "add_query_prefix": "true"},
+      "retrieval": {"top_k": 5, "use_mmr": true, "enable_bm25": true, "enable_reranker": false},
+      "storage": {"backend": "chroma", "chroma_persist_dir": "/app/data/chroma"},
+      "asr": {"enabled": "true", "size": "small", "device": "auto"}
+    }
+    ```
+
 - `POST /ingest`
   - JSON 请求体：`{ text: string, tags?: string[], source?: string, ts?: string }`
   - 返回：`{ ok: boolean, id?: string }`
@@ -26,4 +37,3 @@ API 参考（v0.2）
 - 检索：`TOP_K`、`USE_MMR`、`ENABLE_BM25`、`ENABLE_RERANKER`
 - 向量：`EMBED_MODEL`、`EMBED_ADD_QUERY_PREFIX`
 - 存储：`VECTOR_STORE=chroma|jsonl`、`CHROMA_PERSIST_DIR`
-

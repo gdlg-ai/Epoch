@@ -162,6 +162,36 @@ def health():
     return {"status": "ok", "items": cnt}
 
 
+@app.get("/model")
+def model_info():
+    return {
+        "embedding": {
+            "model": EMBED_MODEL,
+            "add_query_prefix": os.getenv("EMBED_ADD_QUERY_PREFIX", "true"),
+        },
+        "retrieval": {
+            "top_k": DEFAULT_TOP_K,
+            "use_mmr": USE_MMR,
+            "mmr_candidates": MMR_CANDIDATES,
+            "mmr_lambda": MMR_LAMBDA,
+            "enable_bm25": ENABLE_BM25,
+            "enable_reranker": ENABLE_RERANKER,
+            "reranker_model": os.getenv("RERANKER_MODEL", "BAAI/bge-reranker-base"),
+        },
+        "storage": {
+            "backend": os.getenv("VECTOR_STORE", "jsonl"),
+            "chroma_persist_dir": os.getenv("CHROMA_PERSIST_DIR", "/app/data/chroma"),
+            "chroma_telemetry": os.getenv("CHROMA_TELEMETRY", "false"),
+        },
+        "asr": {
+            "enabled": os.getenv("ASR_ENABLED", "true"),
+            "size": os.getenv("ASR_MODEL_SIZE", "small"),
+            "device": os.getenv("ASR_DEVICE", "auto"),
+            "vad_filter": os.getenv("ASR_VAD_FILTER", "true"),
+        },
+    }
+
+
 @app.post("/ingest")
 def ingest(item: IngestItem):
     # Generate id and timestamp if not provided
