@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -12,16 +13,20 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 APP_ENV = os.getenv("APP_ENV", "dev")
 MEMORY_PATH = Path(os.getenv("MEMORY_PATH", "/app/data/memory.jsonl"))
+EMBED_MODEL = os.getenv("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+DEFAULT_TOP_K = int(os.getenv("TOP_K", "5"))
 
 
 class IngestItem(BaseModel):
     text: str
     tags: Optional[List[str]] = None
+    ts: Optional[str] = None  # ISO timestamp optional
+    source: Optional[str] = None  # e.g., ui/api
 
 
 class QueryItem(BaseModel):
     query: str
-    top_k: int = 5
+    top_k: int = DEFAULT_TOP_K
 
 
 class MemoryStore:
@@ -30,6 +35,7 @@ class MemoryStore:
         self.model: Optional[SentenceTransformer] = None
         self._texts: List[str] = []
         self._tags: List[List[str]] = []
+        self._ts: List[Optional[str]] = []
         self._emb: Optional[np.ndarray] = None
         self._ensure_file()
         self._load()
@@ -41,13 +47,14 @@ class MemoryStore:
 
     def _lazy_model(self):
         if self.model is None:
-            # Lightweight, widely-available embedding model
-            self.model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+            # Lightweight, widely-available embedding model (configurable)
+            self.model = SentenceTransformer(EMBED_MODEL)
         return self.model
 
     def _load(self):
         self._texts.clear()
         self._tags.clear()
+        self._ts.clear()
         with self.path.open("r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -56,26 +63,30 @@ class MemoryStore:
                 obj = json.loads(line)
                 self._texts.append(obj.get("text", ""))
                 self._tags.append(obj.get("tags", []) or [])
+                self._ts.append(obj.get("ts"))
         if self._texts:
             emb = self._lazy_model().encode(self._texts, convert_to_numpy=True, normalize_embeddings=True)
             self._emb = emb
         else:
             self._emb = None
 
-    def ingest(self, text: str, tags: Optional[List[str]] = None):
-        obj = {"text": text, "tags": tags or []}
+    def ingest(self, text: str, tags: Optional[List[str]] = None, ts: Optional[str] = None, source: Optional[str] = None):
+        if ts is None:
+            ts = datetime.now(timezone.utc).isoformat()
+        obj = {"text": text, "tags": tags or [], "ts": ts, "source": source}
         with self.path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(obj, ensure_ascii=False) + "\n")
         # Update in-memory state
         self._texts.append(text)
         self._tags.append(tags or [])
+        self._ts.append(ts)
         vec = self._lazy_model().encode([text], convert_to_numpy=True, normalize_embeddings=True)
         if self._emb is None:
             self._emb = vec
         else:
             self._emb = np.vstack([self._emb, vec])
 
-    def query(self, query: str, top_k: int = 5):
+    def query(self, query: str, top_k: int = DEFAULT_TOP_K):
         if not self._texts:
             return []
         q = self._lazy_model().encode([query], convert_to_numpy=True, normalize_embeddings=True)
@@ -86,6 +97,7 @@ class MemoryStore:
             results.append({
                 "text": self._texts[i],
                 "tags": self._tags[i],
+                "ts": self._ts[i],
                 "score": float(sims[i])
             })
         return results
@@ -102,7 +114,7 @@ def health():
 
 @app.post("/ingest")
 def ingest(item: IngestItem):
-    store.ingest(item.text, item.tags)
+    store.ingest(item.text, item.tags, item.ts, item.source)
     return {"ok": True}
 
 
@@ -110,4 +122,3 @@ def ingest(item: IngestItem):
 def query(item: QueryItem):
     results = store.query(item.query, item.top_k)
     return {"results": results}
-

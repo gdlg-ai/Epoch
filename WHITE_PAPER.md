@@ -28,3 +28,6 @@ Ethics
 - Explicit consent, transparency, local control, and options for digital rest (avoid over-reliance).
 
 This PoC is a starting point, inviting contributions to turn the vision into an open ecosystem.
+
+Appendix
+- FAQ: `docs/faq.md`
