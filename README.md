@@ -21,7 +21,8 @@ What you can do today
 - Ingest short notes (text) and instantly search by meaning (semantic search).
 - Explore a minimal UI and API that runs entirely on your machine.
 - Inspect how we embed, store, and retrieve memories (transparent by design).
- - Default embeddings use `BAAI/bge-small-zh-v1.5` for strong zh/EN retrieval; switch via `EMBED_MODEL`.
+- Default embeddings use `BAAI/bge-small-zh-v1.5` for strong zh/EN retrieval; switch via `EMBED_MODEL`.
+ - Storage defaults to an embedded vector DB (Chroma) with local persistence; switch via `VECTOR_STORE`.
 
 Roadmap
 - Phase 1 — Chronicler: audio→ASR→embed→vector store→text RAG; daily digest
@@ -40,6 +41,7 @@ Vision & Architecture
 - Architecture: `docs/architecture.md` (see zh-CN: `docs/architecture.zh-CN.md`)
  - Investor Brief: `docs/investor_brief.md` (zh-CN: `docs/investor_brief.zh-CN.md`)
  - Deep Research Prompts: `docs/deep_research_prompts.md` (zh-CN: `docs/deep_research_prompts.zh-CN.md`)
+ - API Reference: `docs/API.md` (zh-CN: `docs/API.zh-CN.md`)
 
 Milestones
 - v0.1 — Daily Review Loop (ingest → embed → store → retrieve → summarize)
@@ -62,6 +64,10 @@ Apache License 2.0. See `LICENSE`.
 Contributing
 - See `docs/architecture.md` and open issues.
 - PRs welcome for: ASR pipeline, embeddings/vector DB integration, RAG prompts, VLM hookup, and agent tools.
+
+Run local benchmarks
+- Latency: `python scripts/eval_latency.py --host http://localhost:8000`
+- Retrieval toy Recall@K: `python scripts/eval_retrieval.py --host http://localhost:8000`
 
 FAQ
 - Is my data private? Yes. Local by default, no network calls unless you opt in.

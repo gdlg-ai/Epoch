@@ -1,24 +1,24 @@
-Architecture (PoC — First Cut)
+Architecture (PoC — v0.2)
 
-Scope: a minimal, local-first pipeline proving the memory loop and a simple UI.
+Scope: a minimal, local-first pipeline proving the memory loop and a simple UI. Default storage is an embedded vector DB; JSONL remains as a fallback.
 
 Layers
-- Capture: start with manual text input (audio/vision to be added)
-- Memory: JSONL store + embeddings (sentence-transformers) + cosine search
+- Capture: start with manual text input (audio now supported via local ASR; vision later)
+- Memory: Vector DB (Chroma, embedded, persistent) with embeddings (BGE-small-zh) + cosine search
 - Cognition: placeholder (LLM via Ollama in later iterations)
 - Interface: FastAPI backend + Gradio UI
 
 Data Flow
-- /ingest: text (+tags) → append to JSONL → embed → in-memory index
-- /query: query → embed → cosine similarity → candidates → optional MMR re-ranking → top-k results
+- /ingest: text (+tags, +source, +ts) → embed → write to vector store (Chroma) [default] or append JSONL [fallback]
+- /query: query → embed → vector candidates → optional BM25 candidates → MMR diversification → top-k results
 
 Services
-- api: FastAPI, endpoints `/health`, `/ingest`, `/query`
+- api: FastAPI, endpoints `/health`, `/ingest`, `/query`, `/asr`
 - ui: Gradio client calling the API
 - ollama: prepared but disabled for now (enable in compose as needed)
 
 Next Steps
-- Replace JSONL with a vector DB (start with ChromaDB adapter; consider Weaviate later)
+- Harden vector storage (Chroma) and export/import; consider Weaviate later if needed
 - Add ASR pipeline (Whisper/faster-whisper) and VAD
 - Add VLM intake (e.g., LLaVA/Qwen-VL) for images → text memory
 - Introduce a prompt/RAG layer using local LLMs via Ollama
@@ -34,17 +34,19 @@ Design Tenets
 
 Data Model (PoC)
 - Record: `id` (uuid), `ts` (ISO), `source` (e.g., ui/api), `modality` (text|audio|image), `text`, `tags` (string[]), `embedding` (float[]), `meta` (object, optional).
-- Storage: JSONL at runtime (append-only). Planned: vector DB backend behind a thin abstraction.
+- Storage: Vector DB (Chroma) with local persistence (default). Fallback: JSONL append-only. Storage behind a thin interface for swapping engines.
 
 API Contract (current)
-- `GET /health` → `{"status":"ok"}`
-- `POST /ingest` body: `{ text: string, tags?: string[], source?: string, ts?: string }` → `{ id: string }`
-- `POST /query` body: `{ query: string, top_k?: number }` → `{ results: [{ id, text, tags, ts, score }] }`
+- `GET /health` → `{ "status":"ok", "items": number }`
+- `POST /ingest` body: `{ text: string, tags?: string[], source?: string, ts?: string }` → `{ ok: boolean, id?: string }`
+- `POST /query` body: `{ query: string, top_k?: number }` → `{ results: [{ text, tags, ts, score }] }`
+- `POST /asr` form-data: `file: <audio>` → `{ language, text, segments: [{start,end,text}] }`
 
 Configuration
-- Embedding model: env (e.g., `EMBED_MODEL=sentence-transformers/all-MiniLM-L6-v2`).
+- Embedding model: env (default `EMBED_MODEL=BAAI/bge-small-zh-v1.5`); BGE query prefix enabled.
 - Device/runtime: CPU by default; GPU optional when available.
-- Store type: PoC JSONL; later `VECTOR_STORE=chroma|weaviate`.
+- Store type: `VECTOR_STORE=chroma` (default), fallback `jsonl`.
+- Chroma persistence: `CHROMA_PERSIST_DIR=/app/data/chroma`, telemetry off by default.
 
 Operations
 - Local run: `docker compose up --build` then open `http://localhost:7860`.
@@ -52,14 +54,21 @@ Operations
 - Export/Import: planned; index rebuild command to be added with vector DB.
 
 Metrics & Benchmarks (targets)
-- RAG latency P50 < 2s (end-to-end local; relaxed in early PoC).
-- Retrieval quality: top-k hit-rate / subjective relevance ≥ 80% target.
+- RAG latency (CPU): P50 < 400ms / P95 < 1000ms (query end-to-end, reranker OFF)
+- Retrieval quality: Recall@5 ≥ 80% on small local eval; MRR@10 +0.1 with reranker vs baseline
 - Footprint: runnable on consumer hardware without dedicated GPUs.
 
 Retrieval Strategy
 - Baseline: dense embeddings + cosine.
 - Diversity: enable Maximal Marginal Relevance (MMR) post-filter on candidates.
 - Hybrid (planned): add BM25 lexical index (Whoosh/Pyserini) and merge with dense results.
+
+Modules (api)
+- `services/api/embeddings.py` — embedding wrapper with BGE query prefix.
+- `services/api/vector_store.py` — storage interface + Chroma adapter.
+- `services/api/retrieval/hybrid.py` — BM25 tokenizer/index + MMR utility.
+- `services/api/retrieval/rerank.py` — optional cross-encoder reranker (disabled by default).
+- `services/api/asr.py` — faster-whisper integration (small/base, VAD).
 
 Migration Plan (vector DB)
 - Step 1: introduce storage interface; keep JSONL adapter.

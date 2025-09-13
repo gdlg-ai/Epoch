@@ -14,6 +14,7 @@ Do I need a GPU?
 
 What can I do today?
 - Ingest short notes (text) and search by meaning (semantic search) via the local UI. Roadmap adds audio, images, and agent tools.
+ - Use local ASR via `/asr` to transcribe audio notes (faster-whisper small/base).
 
 How is this different from cloud chatbots?
 - Verifiable privacy (local-first), user-owned data, and a focus on memory and actions rather than chat alone.
@@ -29,10 +30,10 @@ Can I change models?
 
 Where are the system requirements?
 - See `docs/requirements.md` for platform support and sizing tiers.
+ - API details: `docs/API.md`.
 
 How do I contribute?
 - Read `CONTRIBUTING.md`, browse open issues, and submit PRs. Feature requests and questions are welcome.
 
 How do I remove my data?
 - Stop the stack and delete the data directory mounted in `compose.yaml` (default `./data`). For future vector DBs, export/import tools will be provided.
-

@@ -1,24 +1,24 @@
-架构说明（PoC 第一轮）
+架构说明（PoC v0.2）
 
-范围：在本地完成最小可行的“记忆闭环”，并提供简洁 UI。
+范围：在本地完成最小可行的“记忆闭环”，并提供简洁 UI。默认采用嵌入式向量数据库（Chroma），JSONL 作为回退方案。
 
 分层
-- 捕获：本轮以手动文本录入为起点（后续补音频/视觉）
-- 记忆：JSONL 存储 + Embedding（sentence-transformers）+ 余弦相似检索
+- 捕获：以手动文本为起点；已支持本地 ASR（音频）；视觉后续加入
+- 记忆：向量数据库（Chroma，嵌入式、持久化）+ Embedding（BGE-small-zh）+ 余弦相似
 - 认知：占位（后续通过 Ollama 对接本地 LLM）
 - 交互：FastAPI 后端 + Gradio 前端
 
 数据流
-- /ingest：文本（+标签）→ 追加写入 JSONL → 生成向量 → 内存索引
-- /query：问题 → 生成向量 → 余弦相似 → 候选集 → 可选 MMR 重排 → Top-K 结果
+- /ingest：文本（+标签/+source/+ts）→ 生成向量 → 写入向量库（Chroma，默认）或 JSONL（回退）
+- /query：问题 → 生成向量 → 向量候选 → 可选 BM25 候选 → MMR 多样化 → Top-K 结果
 
 服务
-- api：FastAPI，提供 `/health`、`/ingest`、`/query`
+- api：FastAPI，提供 `/health`、`/ingest`、`/query`、`/asr`
 - ui：Gradio，调用上述 API
 - ollama：预留，当前默认关闭（按需在 compose 开启）
 
 下一步
-- 将 JSONL 替换为向量数据库（优先 ChromaDB 适配器；后续再考虑 Weaviate）
+- 强化向量存储（Chroma）的导入/导出与一致性；必要时再评估 Weaviate
 - 引入 ASR（Whisper/faster-whisper）与 VAD
 - 整合 VLM（如 LLaVA/Qwen-VL）实现图像→文本入库
 - 引入本地 LLM + RAG 的推理层
@@ -34,17 +34,19 @@
 
 数据模型（PoC）
 - 记录：`id`（uuid）、`ts`（ISO）、`source`（如 ui/api）、`modality`（text|audio|image）、`text`、`tags`（string[]）、`embedding`（float[]）、`meta`（可选对象）。
-- 存储：运行期 JSONL（追加式）。规划：在存储接口下切换向量库实现。
+- 存储：默认向量库（Chroma，本地持久化）；回退 JSONL（追加式）。通过存储接口便于切换实现。
 
 API 契约（当前）
-- `GET /health` → `{"status":"ok"}`
-- `POST /ingest` 请求体：`{ text: string, tags?: string[], source?: string, ts?: string }` → 响应：`{ id: string }`
-- `POST /query` 请求体：`{ query: string, top_k?: number }` → 响应：`{ results: [{ id, text, tags, ts, score }] }`
+- `GET /health` → `{ "status":"ok", "items": number }`
+- `POST /ingest` 请求体：`{ text: string, tags?: string[], source?: string, ts?: string }` → 响应：`{ ok: boolean, id?: string }`
+- `POST /query` 请求体：`{ query: string, top_k?: number }` → 响应：`{ results: [{ text, tags, ts, score }] }`
+- `POST /asr` 表单：`file: <audio>` → `{ language, text, segments: [{start,end,text}] }`
 
 配置
-- 向量模型：环境变量（如 `EMBED_MODEL=sentence-transformers/all-MiniLM-L6-v2`）。
+- 向量模型：环境变量（默认 `EMBED_MODEL=BAAI/bge-small-zh-v1.5`）；开启 BGE 查询前缀。
 - 设备/运行：默认 CPU，可选 GPU。
-- 存储类型：PoC 为 JSONL；后续 `VECTOR_STORE=chroma|weaviate`。
+- 存储类型：`VECTOR_STORE=chroma`（默认），回退 `jsonl`。
+- Chroma 持久化：`CHROMA_PERSIST_DIR=/app/data/chroma`；默认关闭遥测。
 
 运维
 - 本地运行：`docker compose up --build` → 打开 `http://localhost:7860`。
@@ -52,14 +54,21 @@ API 契约（当前）
 - 导入/导出：规划中；随向量库加入索引重建命令。
 
 指标与基准（目标）
-- 本地 RAG 端到端 P50 < 2s（早期可放宽）。
-- 检索质量：Top‑K 命中率/主观相关性 ≥ 80% 目标。
-- 资源占用：在消费级硬件无独显也可运行。
+- 本地（CPU）端到端：P50 < 400ms / P95 < 1000ms（关闭重排）
+- 检索质量：小型评测 Recall@5 ≥ 80%；启用重排 MRR@10 提升 ≥ 0.1
+- 资源占用：消费级硬件可运行。
 
 检索策略
 - 基线：稠密向量 + 余弦相似。
 - 多样性：对候选结果启用 MMR 重排。
 - 混合（规划）：加入 BM25 词法检索（Whoosh/Pyserini）并与向量结果融合。
+
+模块（api）
+- `services/api/embeddings.py` —— 向量封装，支持 BGE 查询前缀。
+- `services/api/vector_store.py` —— 存储接口 + Chroma 适配器。
+- `services/api/retrieval/hybrid.py` —— BM25 分词/索引 + MMR。
+- `services/api/retrieval/rerank.py` —— 可选交叉编码重排（默认关闭）。
+- `services/api/asr.py` —— faster-whisper（small/base，VAD）。
 
 迁移计划（向量数据库）
 - 步骤一：引入存储接口；保留 JSONL 适配器。

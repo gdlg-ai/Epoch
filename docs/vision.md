@@ -47,9 +47,9 @@ Risks & Mitigations
 - Over-reliance: visible controls and rate limiting; human-in-command defaults.
 
 Near-Term Milestones
-- v0.1 Daily Review Loop: ingest → embed → store → retrieve → summarize.
-- Evaluation Baselines: small retrieval + latency benchmarks (scripted).
-- Vector DB Migration: swap JSONL with Chroma/Weaviate behind an interface.
+- v0.1 Daily Review Loop: ingest → embed → store (Chroma) → retrieve → summarize.
+- Evaluation Baselines: small retrieval + latency benchmarks (scripts added in `scripts/`).
+- Vector DB: default to embedded Chroma; continue hardening and export/import.
 - Data Portability: export/import and one-shot index rebuild.
 
 Learn More

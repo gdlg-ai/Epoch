@@ -21,7 +21,8 @@ Epoch 致力于成为“你的数字共生体”：隐私优先、默认本地�
 - 录入短笔记（文本），立即按语义检索（相似度搜索）。
 - 体验最小 UI 与 API，全部在本机运行。
 - 透明了解“嵌入—存储—检索”的工作方式。
- - 默认使用 `BAAI/bge-small-zh-v1.5` 作为向量模型（中英皆佳，CPU 友好）；可通过 `EMBED_MODEL` 切换。
+- 默认使用 `BAAI/bge-small-zh-v1.5` 作为向量模型（中英皆佳，CPU 友好）；可通过 `EMBED_MODEL` 切换。
+ - 存储默认使用嵌入式向量库 Chroma（本地持久化）；可通过 `VECTOR_STORE` 切换。
 
 路线图
 - 阶段一 —— 书记员：音频→ASR→嵌入→向量库→文本 RAG；每日复盘
@@ -40,6 +41,7 @@ Epoch 致力于成为“你的数字共生体”：隐私优先、默认本地�
 - 架构：`docs/architecture.zh-CN.md`（英文版：`docs/architecture.md`）
  - 投资摘要：`docs/investor_brief.zh-CN.md`（英文版：`docs/investor_brief.md`）
  - 深度研究题目包：`docs/deep_research_prompts.zh-CN.md`（英文版：`docs/deep_research_prompts.md`）
+ - API 参考：`docs/API.zh-CN.md`（英文版：`docs/API.md`）
 
 里程碑
 - v0.1 —— 每日复盘闭环（录入→嵌入→存储→检索→总结）
@@ -62,6 +64,10 @@ Apache License 2.0，见 `LICENSE`。
 参与贡献
 - 参考 `docs/architecture.md` 与 issue 列表
 - 欢迎 PR：ASR 流程、Embedding/向量库集成、RAG 提示词、VLM 接入、Agent 工具等
+
+本地基准测试
+- 延迟：`python scripts/eval_latency.py --host http://localhost:8000`
+- 检索（玩具集 Recall@K）：`python scripts/eval_retrieval.py --host http://localhost:8000`
 
 常见问题（FAQ）
 - 我的数据安全吗？安全。默认本地运行，除非你主动开启外联。
