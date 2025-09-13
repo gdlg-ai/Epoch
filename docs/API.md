@@ -33,6 +33,9 @@ Endpoints
   - Returns: `{ language: string, text: string, segments: [{ start: number, end: number, text: string }] }`
   - Notes: Enabled when `ASR_ENABLED=true`. Uses faster-whisper small/base locally.
 
+- `GET /mcp`
+  - Returns: a minimal MCP-style manifest listing tools with input/output JSON Schemas. This is a discovery stub for agent integration; not a full MCP implementation over JSON-RPC.
+
 Environment Toggles (selection)
 - Retrieval: `TOP_K`, `USE_MMR`, `ENABLE_BM25`, `ENABLE_RERANKER`
 - Embeddings: `EMBED_MODEL`, `EMBED_ADD_QUERY_PREFIX`

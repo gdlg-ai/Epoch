@@ -192,6 +192,119 @@ def model_info():
     }
 
 
+@app.get("/mcp")
+def mcp_manifest():
+    """
+    Minimal HTTP-discoverable manifest for tools (MCP-style stub).
+    This is NOT a full MCP implementation; it exposes JSON Schemas
+    for common operations to make agent integration easier.
+    """
+    manifest = {
+        "name": "epoch",
+        "version": "0.2",
+        "protocol": "mcp-stub",
+        "tools": [
+            {
+                "name": "health",
+                "method": "GET",
+                "path": "/health",
+                "input_schema": {"type": "object", "properties": {}, "additionalProperties": False},
+                "output_schema": {
+                    "type": "object",
+                    "properties": {"status": {"type": "string"}, "items": {"type": "integer"}},
+                    "required": ["status", "items"],
+                },
+            },
+            {
+                "name": "ingest",
+                "method": "POST",
+                "path": "/ingest",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "text": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "source": {"type": "string"},
+                        "ts": {"type": "string"},
+                    },
+                    "required": ["text"],
+                },
+                "output_schema": {
+                    "type": "object",
+                    "properties": {"ok": {"type": "boolean"}, "id": {"type": "string"}},
+                    "required": ["ok"],
+                },
+            },
+            {
+                "name": "query",
+                "method": "POST",
+                "path": "/query",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {"query": {"type": "string"}, "top_k": {"type": "integer"}},
+                    "required": ["query"],
+                },
+                "output_schema": {
+                    "type": "object",
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "text": {"type": "string"},
+                                    "tags": {"type": "array", "items": {"type": "string"}},
+                                    "ts": {"type": "string"},
+                                    "score": {"type": "number"},
+                                },
+                                "required": ["text", "tags", "score"],
+                            },
+                        }
+                    },
+                    "required": ["results"],
+                },
+            },
+            {
+                "name": "model",
+                "method": "GET",
+                "path": "/model",
+                "input_schema": {"type": "object", "properties": {}, "additionalProperties": False},
+                "output_schema": {"type": "object"},
+            },
+            {
+                "name": "asr",
+                "method": "POST",
+                "path": "/asr",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {"file": {"type": "string", "description": "multipart/form-data file field name"}},
+                },
+                "output_schema": {
+                    "type": "object",
+                    "properties": {
+                        "language": {"type": "string"},
+                        "text": {"type": "string"},
+                        "segments": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "start": {"type": "number"},
+                                    "end": {"type": "number"},
+                                    "text": {"type": "string"},
+                                },
+                                "required": ["start", "end", "text"],
+                            },
+                        },
+                    },
+                    "required": ["text"],
+                },
+            },
+        ],
+    }
+    return manifest
+
+
 @app.post("/ingest")
 def ingest(item: IngestItem):
     # Generate id and timestamp if not provided

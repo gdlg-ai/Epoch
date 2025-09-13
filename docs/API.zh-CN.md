@@ -33,6 +33,9 @@ API 参考（v0.2）
   - 返回：`{ language: string, text: string, segments: [{ start: number, end: number, text: string }] }`
   - 说明：当 `ASR_ENABLED=true` 时启用，基于 faster-whisper small/base 本地运行。
 
+- `GET /mcp`
+  - 返回：一个最小的 MCP 风格工具清单（含输入/输出 JSON Schema），便于与 Agent 集成。注意：这不是完整的 MCP JSON‑RPC 实现，仅用于 HTTP 端的能力发现。
+
 环境开关（部分）
 - 检索：`TOP_K`、`USE_MMR`、`ENABLE_BM25`、`ENABLE_RERANKER`
 - 向量：`EMBED_MODEL`、`EMBED_ADD_QUERY_PREFIX`
