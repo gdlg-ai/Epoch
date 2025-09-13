@@ -1,0 +1,35 @@
+name: epoch
+
+services:
+  api:
+    build: ./services/api
+    env_file:
+      - ./.env
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    depends_on: []
+
+  ui:
+    build: ./services/ui
+    env_file:
+      - ./.env
+    ports:
+      - "7860:7860"
+    depends_on:
+      - api
+
+  # Optional: prepare local model runtime. Enable later when needed.
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   env_file:
+  #     - ./.env
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama:/root/.ollama
+
+volumes:
+  ollama:
+    driver: local
