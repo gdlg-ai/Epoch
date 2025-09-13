@@ -19,16 +19,20 @@ Recommended Defaults (PoC)
 - Embeddings (default): `BAAI/bge-small-zh-v1.5` (strong zh, good EN; CPU‑friendly). Optional: `BAAI/bge-small-en-v1.5` for EN‑heavy, or `BAAI/bge-m3` (multilingual SOTA; heavier).
 - ASR (optional in Phase 1+): `faster-whisper` small/base; CPU okay, GPU preferred for real-time.
 - VAD: `silero-vad` (lightweight).
-- Vector store: JSONL (current PoC); first adapter target: ChromaDB (embedded, Apache‑2.0) behind a storage interface; Weaviate considered later.
+- Vector store: ChromaDB by default (embedded, Apache‑2.0) with local persistence; fallback JSONL via the storage interface; Weaviate considered later.
 - LLM (via Ollama, optional): `phi3:mini`, `mistral:7b-instruct`, `qwen2:7b`. VLM: `llava:7b` or `qwen2-vl` later.
 - Retrieval: enable MMR re‑ranking by default for diverse top‑K; plan hybrid BM25 + dense.
 
 - `EMBED_MODEL` (default: `BAAI/bge-small-zh-v1.5`)
+- `EMBED_ADD_QUERY_PREFIX` (default: `true`), `EMBED_QUERY_PREFIX_ZH`, `EMBED_QUERY_PREFIX_EN`
 - `ASR_MODEL` (default: `faster-whisper-small`)
-- `VECTOR_STORE` (default: `jsonl`; future: `chroma|weaviate`)
+- `VECTOR_STORE` (default: `chroma`; fallback: `jsonl`)
+- `CHROMA_PERSIST_DIR` (default: `/app/data/chroma`), `CHROMA_TELEMETRY` (default: `false`)
 - `DEVICE` (default: `cpu`; future: `cuda` when available)
 - `TOP_K` (default: `5`)
 - `USE_MMR` (default: `true`), `MMR_CANDIDATES` (default: `20`), `MMR_LAMBDA` (default: `0.5`)
+- `ENABLE_BM25` (default: `true`), `ENABLE_RERANKER` (default: `false`), `RERANKER_MODEL` (default: `BAAI/bge-reranker-base`)
+- `ASR_ENABLED` (default: `true`), `ASR_MODEL_SIZE` (`small|base`), `ASR_DEVICE` (`auto|cpu|cuda`), `ASR_VAD_FILTER` (default: `true`)
 
 Sizing Tiers
 - Minimum PoC (CPU-only): 2 cores, 4 GB RAM, 5 GB free disk. Suitable for text ingest/query and small memories.
